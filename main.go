@@ -12,7 +12,21 @@ import (
         
         "gps-processor/haversine"
         "github.com/schollz/progressbar/v3"
+        "gopkg.in/yaml.v3"
 )
+
+// Config represents the application configuration
+type Config struct {
+        Columns struct {
+                ID        string `yaml:"id"`
+                Latitude  string `yaml:"latitude"`
+                Longitude string `yaml:"longitude"`
+                Timestamp string `yaml:"timestamp"`
+        } `yaml:"columns"`
+        Parameters struct {
+                FilterAboveKph float64 `yaml:"filter_above_kph"`
+        } `yaml:"parameters"`
+}
 
 // Record represents a single GPS data point
 type Record struct {
@@ -31,29 +45,61 @@ type Record struct {
 }
 
 func main() {
-        // Check for input file argument and filter_above_kph parameter
+        // Default configuration
+        config := Config{}
+        config.Columns.ID = "ID"
+        config.Columns.Latitude = "latitude"
+        config.Columns.Longitude = "longitude"
+        config.Columns.Timestamp = "timestamp"
+        config.Parameters.FilterAboveKph = 1.0
+        
+        // Check for input file and config file arguments
         args := os.Args[1:]
         var inputFile string
-        var filterAboveKph float64 = 1.0 // Default to 1.0 km/h
-
+        var configFile string
+        
+        // Process command line arguments
         if len(args) > 0 {
                 inputFile = args[0]
         } else {
                 inputFile = "sample.csv" // Default to sample.csv if no argument provided
         }
-
-        // Check if there's a second argument for filter_above_kph
+        
+        // Check if there's a second argument for config file
         if len(args) > 1 {
-                var err error
-                filterAboveKph, err = strconv.ParseFloat(args[1], 64)
+                // Try to parse as float first for backward compatibility
+                _, err := strconv.ParseFloat(args[1], 64)
                 if err != nil {
-                        fmt.Fprintf(os.Stderr, "Error parsing filter_above_kph parameter: %v\n", err)
-                        fmt.Fprintf(os.Stderr, "Using default value: %.1f km/h\n", filterAboveKph)
+                        // Not a float, treat as config file
+                        configFile = args[1]
+                } else {
+                        // Is a float, use as filter_above_kph for backward compatibility
+                        config.Parameters.FilterAboveKph, _ = strconv.ParseFloat(args[1], 64)
                 }
         }
-
+        
+        // Check if there's a third argument for config file when second is filter_above_kph
+        if len(args) > 2 && configFile == "" {
+                configFile = args[2]
+        }
+        
+        // Load configuration file if specified
+        if configFile != "" {
+                if err := loadConfig(configFile, &config); err != nil {
+                        fmt.Fprintf(os.Stderr, "Warning: Error loading config file: %v\n", err)
+                        fmt.Fprintf(os.Stderr, "Using default or command line configuration.\n")
+                } else {
+                        fmt.Printf("Configuration loaded from: %s\n", configFile)
+                }
+        }
+        
+        // Use the configuration
+        filterAboveKph := config.Parameters.FilterAboveKph
+        
         fmt.Printf("=== GPS Data Processor ===\n")
         fmt.Printf("Input file: %s\n", inputFile)
+        fmt.Printf("Column mappings: ID='%s', Lat='%s', Lon='%s', Time='%s'\n", 
+                config.Columns.ID, config.Columns.Latitude, config.Columns.Longitude, config.Columns.Timestamp)
         fmt.Printf("Speed filter threshold: %.1f km/h\n\n", filterAboveKph)
 
         // Start timer to track overall processing time
@@ -61,7 +107,7 @@ func main() {
 
         // Read and process the CSV file
         fmt.Println("Step 1: Reading input CSV file...")
-        records, err := readCSV(inputFile)
+        records, err := readCSV(inputFile, &config)
         if err != nil {
                 fmt.Fprintf(os.Stderr, "Error reading CSV: %v\n", err)
                 os.Exit(1)
@@ -102,6 +148,8 @@ func main() {
         fmt.Printf("\n=== Processing Summary ===\n")
         fmt.Printf("Total input records: %d\n", len(records))
         fmt.Printf("Records after filtering: %d\n", len(filteredRecords))
+        fmt.Printf("Column mappings: ID='%s', Lat='%s', Lon='%s', Time='%s'\n", 
+                config.Columns.ID, config.Columns.Latitude, config.Columns.Longitude, config.Columns.Timestamp)
         fmt.Printf("Speed filter threshold: %.1f km/h\n", filterAboveKph)
         fmt.Printf("Processing time: %.2f seconds\n", duration)
         fmt.Printf("CSV output file: %s\n", csvOutputFile)
@@ -109,8 +157,23 @@ func main() {
         fmt.Printf("=========================\n")
 }
 
+// loadConfig loads the configuration from a YAML file
+func loadConfig(filename string, config *Config) error {
+        data, err := os.ReadFile(filename)
+        if err != nil {
+                return fmt.Errorf("unable to read config file: %w", err)
+        }
+        
+        err = yaml.Unmarshal(data, config)
+        if err != nil {
+                return fmt.Errorf("unable to parse config file: %w", err)
+        }
+        
+        return nil
+}
+
 // readCSV reads and parses the CSV file
-func readCSV(filename string) ([]Record, error) {
+func readCSV(filename string, config *Config) ([]Record, error) {
         file, err := os.Open(filename)
         if err != nil {
                 return nil, fmt.Errorf("unable to open file: %w", err)
@@ -145,24 +208,25 @@ func readCSV(filename string) ([]Record, error) {
                 return nil, fmt.Errorf("error reading header: %w", err)
         }
 
-        // Find column indices
+        // Find column indices based on configuration
         idIdx, latIdx, lonIdx, timestampIdx := -1, -1, -1, -1
         for i, col := range header {
                 switch col {
-                case "ID":
+                case config.Columns.ID:
                         idIdx = i
-                case "latitude":
+                case config.Columns.Latitude:
                         latIdx = i
-                case "longitude":
+                case config.Columns.Longitude:
                         lonIdx = i
-                case "timestamp":
+                case config.Columns.Timestamp:
                         timestampIdx = i
                 }
         }
 
         // Validate all required columns exist
         if idIdx == -1 || latIdx == -1 || lonIdx == -1 || timestampIdx == -1 {
-                return nil, fmt.Errorf("missing required columns (ID, latitude, longitude, timestamp)")
+                return nil, fmt.Errorf("missing required columns (%s, %s, %s, %s)", 
+                        config.Columns.ID, config.Columns.Latitude, config.Columns.Longitude, config.Columns.Timestamp)
         }
 
         var records []Record
