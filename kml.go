@@ -5,7 +5,7 @@ import (
 	"os"
 	"sort"
 	"time"
-	
+
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -16,13 +16,13 @@ func writeOutputKML(filename string, records []Record) error {
 		return fmt.Errorf("unable to create KML file: %w", err)
 	}
 	defer file.Close()
-	
+
 	// Group records by ID
 	groups := make(map[string][]Record)
 	for _, record := range records {
 		groups[record.ID] = append(groups[record.ID], record)
 	}
-	
+
 	// Create progress bar for KML generation
 	bar := progressbar.NewOptions(
 		len(groups),
@@ -36,14 +36,14 @@ func writeOutputKML(filename string, records []Record) error {
 			BarEnd:        "]",
 		}),
 	)
-	
+
 	// XML header
 	fmt.Fprintln(file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
 	fmt.Fprintln(file, "<kml xmlns=\"http://www.opengis.net/kml/2.2\">")
 	fmt.Fprintln(file, "<Document>")
 	fmt.Fprintln(file, "  <name>GPS Trajectories</name>")
 	fmt.Fprintln(file, "  <description>GPS data processed by GPS Processor</description>")
-	
+
 	// Add styles for different IDs
 	fmt.Fprintln(file, "  <Style id=\"defaultStyle\">")
 	fmt.Fprintln(file, "    <LineStyle>")
@@ -55,7 +55,7 @@ func writeOutputKML(filename string, records []Record) error {
 	fmt.Fprintln(file, "      <scale>0.5</scale>")
 	fmt.Fprintln(file, "    </IconStyle>")
 	fmt.Fprintln(file, "  </Style>")
-	
+
 	// Define some common colors
 	colors := []string{
 		"ff0000ff", // Red
@@ -64,23 +64,23 @@ func writeOutputKML(filename string, records []Record) error {
 		"ff00ffff", // Yellow
 		"ffff00ff", // Magenta
 	}
-	
+
 	// Create a folder for each ID
 	idCount := 0
 	for id, group := range groups {
 		// Update progress bar
 		_ = bar.Add(1)
-		
+
 		// Sort by timestamp to ensure correct order
 		sort.Slice(group, func(i, j int) bool {
 			return group[i].Timestamp.Before(group[j].Timestamp)
 		})
-		
+
 		// Generate a color based on the ID
 		colorIndex := idCount % len(colors)
 		color := colors[colorIndex]
 		idCount++
-		
+
 		// Create a unique style for this ID
 		styleID := fmt.Sprintf("style_%s", id)
 		fmt.Fprintf(file, "  <Style id=\"%s\">\n", styleID)
@@ -93,11 +93,11 @@ func writeOutputKML(filename string, records []Record) error {
 		fmt.Fprintln(file, "      <scale>0.5</scale>")
 		fmt.Fprintln(file, "    </IconStyle>")
 		fmt.Fprintln(file, "  </Style>")
-		
+
 		// Create a folder for this ID
 		fmt.Fprintf(file, "  <Folder>\n")
 		fmt.Fprintf(file, "    <name>Device %s</name>\n", id)
-		
+
 		// Create a placemark for the trajectory
 		fmt.Fprintln(file, "    <Placemark>")
 		fmt.Fprintf(file, "      <name>Trajectory of Device %s</name>\n", id)
@@ -112,16 +112,16 @@ func writeOutputKML(filename string, records []Record) error {
 		fmt.Fprintln(file, "        <tessellate>1</tessellate>")
 		fmt.Fprintln(file, "        <altitudeMode>clampToGround</altitudeMode>")
 		fmt.Fprintln(file, "        <coordinates>")
-		
+
 		// Add all coordinates for the trajectory
 		for _, record := range group {
 			fmt.Fprintf(file, "          %f,%f,0\n", record.Longitude, record.Latitude)
 		}
-		
+
 		fmt.Fprintln(file, "        </coordinates>")
 		fmt.Fprintln(file, "      </LineString>")
 		fmt.Fprintln(file, "    </Placemark>")
-		
+
 		// Create individual placemarks for each point with detailed information
 		for i, record := range group {
 			fmt.Fprintln(file, "    <Placemark>")
@@ -150,14 +150,14 @@ func writeOutputKML(filename string, records []Record) error {
 			fmt.Fprintln(file, "      </Point>")
 			fmt.Fprintln(file, "    </Placemark>")
 		}
-		
+
 		fmt.Fprintln(file, "  </Folder>")
 	}
-	
+
 	// Close XML document
 	fmt.Fprintln(file, "</Document>")
 	fmt.Fprintln(file, "</kml>")
-	
+
 	fmt.Println() // Add newline after progress bar
 	return nil
 }

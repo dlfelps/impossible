@@ -37,7 +37,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "go run main.go"
+args = "./gps-processor"
 
 [[workflows.workflow]]
 name = "gps-processor"
@@ -45,7 +45,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "go run main.go large_sample.csv 3.0 && head -n 5 large_sample_processed.csv"
+args = "go run main.go kml.go large_sample.csv 3.0 && head -n 5 large_sample_processed.csv"
 
 [[workflows.workflow]]
 name = "GPS Data Processor - Custom Config"
@@ -53,7 +53,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "go run main.go large_sample.csv test_config.yaml"
+args = "go run main.go kml.go large_sample.csv test_config.yaml"
 
 [[workflows.workflow]]
 name = "GPS Data Processor - Help"
@@ -61,7 +61,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "go run main.go --help"
+args = "./gps-processor --help"
 
 [[workflows.workflow]]
 name = "GPS Data Processor - Help Flag"
@@ -69,7 +69,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "go run main.go -h"
+args = "go run main.go kml.go -h"
 
 [deployment]
-run = ["sh", "-c", "go run main.go"]
+run = ["sh", "-c", "./gps-processor"]
