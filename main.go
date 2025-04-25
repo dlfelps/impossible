@@ -31,17 +31,30 @@ type Record struct {
 }
 
 func main() {
-        // Check for input file argument
+        // Check for input file argument and filter_above_kph parameter
         args := os.Args[1:]
         var inputFile string
+        var filterAboveKph float64 = 1.0 // Default to 1.0 km/h
+
         if len(args) > 0 {
                 inputFile = args[0]
         } else {
                 inputFile = "sample.csv" // Default to sample.csv if no argument provided
         }
 
+        // Check if there's a second argument for filter_above_kph
+        if len(args) > 1 {
+                var err error
+                filterAboveKph, err = strconv.ParseFloat(args[1], 64)
+                if err != nil {
+                        fmt.Fprintf(os.Stderr, "Error parsing filter_above_kph parameter: %v\n", err)
+                        fmt.Fprintf(os.Stderr, "Using default value: %.1f km/h\n", filterAboveKph)
+                }
+        }
+
         fmt.Printf("=== GPS Data Processor ===\n")
-        fmt.Printf("Input file: %s\n\n", inputFile)
+        fmt.Printf("Input file: %s\n", inputFile)
+        fmt.Printf("Speed filter threshold: %.1f km/h\n\n", filterAboveKph)
 
         // Start timer to track overall processing time
         startTime := time.Now()
@@ -63,9 +76,9 @@ func main() {
         fmt.Println("Step 3: Calculating time differences and distances...")
         processedRecords := processGroups(groupedRecords)
         
-        // Filter out records with previous_row = 0
+        // Filter out records with previous_row = 0 and apply speed filter
         fmt.Println("Step 4: Filtering records...")
-        filteredRecords := filterRecords(processedRecords)
+        filteredRecords := filterRecords(processedRecords, filterAboveKph)
         fmt.Printf("Filtered from %d to %d records\n\n", len(processedRecords), len(filteredRecords))
 
         // Output to CSV file
@@ -89,6 +102,7 @@ func main() {
         fmt.Printf("\n=== Processing Summary ===\n")
         fmt.Printf("Total input records: %d\n", len(records))
         fmt.Printf("Records after filtering: %d\n", len(filteredRecords))
+        fmt.Printf("Speed filter threshold: %.1f km/h\n", filterAboveKph)
         fmt.Printf("Processing time: %.2f seconds\n", duration)
         fmt.Printf("CSV output file: %s\n", csvOutputFile)
         fmt.Printf("KML output file: %s\n", kmlOutputFile)
@@ -309,8 +323,8 @@ func processGroups(groups map[string][]Record) []Record {
         return processedRecords
 }
 
-// filterRecords removes records with previous_row = 0
-func filterRecords(records []Record) []Record {
+// filterRecords removes records with previous_row = 0 and optionally filters by speed threshold
+func filterRecords(records []Record, filterAboveKph float64) []Record {
         // Create a progress bar for filtering
         bar := progressbar.NewOptions(
                 len(records),
@@ -326,17 +340,28 @@ func filterRecords(records []Record) []Record {
         )
 
         var filtered []Record
+        var speedFilteredCount int
+        
         for _, record := range records {
                 // Update progress bar
                 _ = bar.Add(1)
                 
                 // Only keep records with previous_row not equal to 0
                 if record.PreviousRow != 0 {
-                        filtered = append(filtered, record)
+                        // Apply speed filtering
+                        if record.Speed >= filterAboveKph {
+                                filtered = append(filtered, record)
+                        } else {
+                                speedFilteredCount++
+                        }
                 }
         }
         
         fmt.Println() // Add newline after progress bar
+        if filterAboveKph > 0 {
+                fmt.Printf("Speed filter applied: Removed %d records with speed below %.1f km/h\n", 
+                        speedFilteredCount, filterAboveKph)
+        }
         return filtered
 }
 
