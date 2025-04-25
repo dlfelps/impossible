@@ -19,13 +19,25 @@ args = "GPS Data Processor"
 task = "workflow.run"
 args = "gps-processor"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "GPS Data Processor - Custom Config"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "GPS Data Processor - Help"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "GPS Data Processor - Help Flag"
+
 [[workflows.workflow]]
 name = "GPS Data Processor"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "go run main.go large_sample.csv config.yaml"
+args = "go run main.go"
 
 [[workflows.workflow]]
 name = "gps-processor"
@@ -35,5 +47,29 @@ author = "agent"
 task = "shell.exec"
 args = "go run main.go large_sample.csv 3.0 && head -n 5 large_sample_processed.csv"
 
+[[workflows.workflow]]
+name = "GPS Data Processor - Custom Config"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "go run main.go large_sample.csv test_config.yaml"
+
+[[workflows.workflow]]
+name = "GPS Data Processor - Help"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "go run main.go --help"
+
+[[workflows.workflow]]
+name = "GPS Data Processor - Help Flag"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "go run main.go -h"
+
 [deployment]
-run = ["sh", "-c", "go run main.go large_sample.csv config.yaml"]
+run = ["sh", "-c", "go run main.go"]

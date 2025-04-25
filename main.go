@@ -8,6 +8,7 @@ import (
         "path/filepath"
         "sort"
         "strconv"
+        "strings"
         "time"
         
         "gps-processor/haversine"
@@ -44,17 +45,111 @@ type Record struct {
         PrevTimestamp    time.Time // timestamp of previous point
 }
 
+// displayHelp shows usage information and command line options
+func displayHelp() {
+        fmt.Println("GPS Data Processor - A tool for processing and analyzing GPS trajectory data")
+        fmt.Println("\nUsage:")
+        fmt.Println("  go run main.go [input_file] [filter_speed] [config_file]")
+        fmt.Println("  go run main.go [input_file] [config_file]")
+        fmt.Println("  go run main.go -h | --help\n")
+        
+        fmt.Println("Arguments:")
+        fmt.Println("  input_file      Path to the input CSV file (default: sample.csv)")
+        fmt.Println("  filter_speed    Minimum speed threshold in km/h (default: 1.0)")
+        fmt.Println("  config_file     Path to configuration YAML file (default: config.yaml)")
+        
+        fmt.Println("\nOptions:")
+        fmt.Println("  -h, --help      Show this help message and exit")
+        
+        fmt.Println("\nInput File Format:")
+        fmt.Println("  - CSV file with header row containing column names")
+        fmt.Println("  - Required columns: ID, latitude, longitude, timestamp")
+        fmt.Println("  - Timestamps must be in RFC3339 format (e.g., 2023-03-01T12:00:00Z)")
+        
+        fmt.Println("\nConfiguration File:")
+        fmt.Println("  - YAML format with column mappings and processing parameters")
+        fmt.Println("  - Custom column names can be specified for different CSV formats")
+        fmt.Println("  - A default config.yaml is created automatically if none exists")
+        fmt.Println("  - If no YAML file exists, one will be created and processing will halt for review")
+        fmt.Println("  - If a single CSV and YAML file exist in the directory, they will be used automatically")
+        
+        fmt.Println("\nOutput Files:")
+        fmt.Println("  - CSV file with calculated distances, speeds, and time differences")
+        fmt.Println("  - KML file for visualization in mapping applications")
+        
+        fmt.Println("\nExamples:")
+        fmt.Println("  go run main.go                                  # Auto-detect CSV and YAML files if only one of each exists")
+        fmt.Println("  go run main.go sample.csv                       # Process with default settings")
+        fmt.Println("  go run main.go gps_data.csv 3.5                 # Set speed threshold to 3.5 km/h")
+        fmt.Println("  go run main.go tracking.csv my_config.yaml      # Use custom configuration file")
+        fmt.Println("  go run main.go data.csv 2.0 custom_config.yaml  # Set both speed and config file")
+}
+
+// findSingleFileByExtension finds a single file with the given extension in the current directory
+// Returns the filename if exactly one file is found, empty string otherwise
+// If excludeOutput is true, it will exclude filenames that end with "_processed" 
+// which are typically output files from previous runs
+func findSingleFileByExtension(extension string) string {
+        files, err := os.ReadDir(".")
+        if err != nil {
+                fmt.Fprintf(os.Stderr, "Warning: Unable to read directory: %v\n", err)
+                return ""
+        }
+        
+        var matchingFiles []string
+        
+        for _, file := range files {
+                if file.IsDir() {
+                        continue
+                }
+                
+                filename := file.Name()
+                if filepath.Ext(filename) == extension {
+                        // Skip output files from previous runs
+                        if !strings.Contains(filename, "_processed") {
+                                matchingFiles = append(matchingFiles, filename)
+                        }
+                }
+        }
+        
+        if len(matchingFiles) == 1 {
+                return matchingFiles[0]
+        }
+        return ""
+}
+
 func main() {
         // Default configuration
         config := Config{}
         config.Columns.ID = "ID"
         config.Columns.Latitude = "latitude"
         config.Columns.Longitude = "longitude"
-        config.Columns.Timestamp = "timestamp"
+        config.Columns.Timestamp = "timestamp" 
         config.Parameters.FilterAboveKph = 1.0
         
-        // Check for input file and config file arguments
+        // Check for help flag
         args := os.Args[1:]
+        if len(args) > 0 && (args[0] == "-h" || args[0] == "--help") {
+                displayHelp()
+                return
+        }
+        
+        // Check for and create default config file if it doesn't exist
+        defaultConfigFile := "config.yaml"
+        if _, err := os.Stat(defaultConfigFile); os.IsNotExist(err) {
+                fmt.Println("No configuration file found. Creating default config.yaml...")
+                if err := createDefaultConfigFile(defaultConfigFile); err != nil {
+                        fmt.Fprintf(os.Stderr, "Warning: Failed to create default config file: %v\n", err)
+                } else {
+                        fmt.Println("\n✓ A new config.yaml file has been created.")
+                        fmt.Println("⚠ Please review the configuration file before running the tool again.")
+                        fmt.Println("ℹ You can customize column names and processing parameters as needed.")
+                        fmt.Println("ℹ Run the tool again after reviewing the configuration.")
+                        return
+                }
+        }
+        
+        // Check for input file and config file arguments
         var inputFile string
         var configFile string
         
@@ -62,7 +157,14 @@ func main() {
         if len(args) > 0 {
                 inputFile = args[0]
         } else {
-                inputFile = "sample.csv" // Default to sample.csv if no argument provided
+                // Auto-detect input file if not specified
+                singleCSV := findSingleFileByExtension(".csv")
+                if singleCSV != "" {
+                        inputFile = singleCSV
+                        fmt.Printf("Found single CSV file: %s (using as input)\n", singleCSV)
+                } else {
+                        inputFile = "sample.csv" // Default to sample.csv if no argument provided
+                }
         }
         
         // Check if there's a second argument for config file
@@ -83,13 +185,52 @@ func main() {
                 configFile = args[2]
         }
         
-        // Load configuration file if specified
+        // Load configuration based on arguments
         if configFile != "" {
+                // Load the specified config file
                 if err := loadConfig(configFile, &config); err != nil {
                         fmt.Fprintf(os.Stderr, "Warning: Error loading config file: %v\n", err)
                         fmt.Fprintf(os.Stderr, "Using default or command line configuration.\n")
                 } else {
                         fmt.Printf("Configuration loaded from: %s\n", configFile)
+                }
+        } else {
+                // Try to find a YAML config file to use
+                
+                // First try config.yaml
+                defaultConfigFile := "config.yaml"
+                if _, err := os.Stat(defaultConfigFile); err == nil {
+                        fmt.Println("Found config.yaml in current directory...")
+                        if err := loadConfig(defaultConfigFile, &config); err != nil {
+                                fmt.Fprintf(os.Stderr, "Warning: Error loading config.yaml: %v\n", err)
+                                fmt.Fprintf(os.Stderr, "Using default or command line configuration.\n")
+                        } else {
+                                fmt.Printf("Configuration loaded from: %s\n", defaultConfigFile)
+                        }
+                } else {
+                        // Look for a single YAML file if config.yaml doesn't exist
+                        singleYAML := findSingleFileByExtension(".yaml")
+                        if singleYAML != "" && singleYAML != defaultConfigFile {
+                                fmt.Printf("Found single YAML file: %s (using as configuration)\n", singleYAML)
+                                if err := loadConfig(singleYAML, &config); err != nil {
+                                        fmt.Fprintf(os.Stderr, "Warning: Error loading %s: %v\n", singleYAML, err)
+                                        fmt.Fprintf(os.Stderr, "Using default configuration.\n")
+                                } else {
+                                        fmt.Printf("Configuration loaded from: %s\n", singleYAML)
+                                }
+                        } else {
+                                // Also check for .yml extension
+                                singleYML := findSingleFileByExtension(".yml")
+                                if singleYML != "" {
+                                        fmt.Printf("Found single YML file: %s (using as configuration)\n", singleYML)
+                                        if err := loadConfig(singleYML, &config); err != nil {
+                                                fmt.Fprintf(os.Stderr, "Warning: Error loading %s: %v\n", singleYML, err)
+                                                fmt.Fprintf(os.Stderr, "Using default configuration.\n")
+                                        } else {
+                                                fmt.Printf("Configuration loaded from: %s\n", singleYML)
+                                        }
+                                }
+                        }
                 }
         }
         
@@ -169,6 +310,30 @@ func loadConfig(filename string, config *Config) error {
                 return fmt.Errorf("unable to parse config file: %w", err)
         }
         
+        return nil
+}
+
+// createDefaultConfigFile creates a default configuration file with comments
+func createDefaultConfigFile(filename string) error {
+        defaultConfig := `# GPS Processor Configuration
+
+# CSV Column Mappings (specify the column names in your CSV file)
+columns:
+  id: "ID"               # Device/track identifier
+  latitude: "latitude"   # Latitude coordinate
+  longitude: "longitude" # Longitude coordinate  
+  timestamp: "timestamp" # Timestamp in RFC3339 format
+
+# Processing Parameters
+parameters:
+  filter_above_kph: 1.0  # Filter out records with speed below this value (km/h)
+`
+        err := os.WriteFile(filename, []byte(defaultConfig), 0644)
+        if err != nil {
+                return fmt.Errorf("unable to create default config file: %w", err)
+        }
+        
+        fmt.Printf("Created default configuration file: %s\n", filename)
         return nil
 }
 

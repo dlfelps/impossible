@@ -1,2 +1,0 @@
-ID,latitude,longitude,timestamp,original_row,previous_row,prev_latitude,prev_longitude,prev_timestamp,time_diff_seconds,distance_km,speed_kmh
-1,37.773300,-122.416700,2023-03-01T12:05:30Z,3,2,37.774900,-122.419400,2023-03-01T12:00:00Z,330.000000,0.296594,3.235570

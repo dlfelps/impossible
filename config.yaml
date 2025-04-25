@@ -2,11 +2,11 @@
 
 # CSV Column Mappings (specify the column names in your CSV file)
 columns:
-  id: "ID"               # Device/track identifier
-  latitude: "latitude"   # Latitude coordinate
-  longitude: "longitude" # Longitude coordinate  
-  timestamp: "timestamp" # Timestamp in RFC3339 format
+  id: "newID"               # Device/track identifier
+  latitude: "lat"   # Latitude coordinate
+  longitude: "lon" # Longitude coordinate  
+  timestamp: "time" # Timestamp in RFC3339 format
 
 # Processing Parameters
 parameters:
-  filter_above_kph: 1.0  # Filter out records with speed below this value (km/h)
+  filter_above_kph: 1.5  # Filter out records with speed below this value (km/h)

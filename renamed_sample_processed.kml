@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+  <name>GPS Trajectories</name>
+  <description>GPS data processed by GPS Processor</description>
+  <Style id="defaultStyle">
+    <LineStyle>
+      <color>ff0000ff</color>
+      <width>4</width>
+    </LineStyle>
+    <IconStyle>
+      <color>ff0000ff</color>
+      <scale>0.5</scale>
+    </IconStyle>
+  </Style>
+  <Style id="style_1">
+    <LineStyle>
+      <color>ff0000ff</color>
+      <width>4</width>
+    </LineStyle>
+    <IconStyle>
+      <color>ff0000ff</color>
+      <scale>0.5</scale>
+    </IconStyle>
+  </Style>
+  <Folder>
+    <name>Device 1</name>
+    <Placemark>
+      <name>Trajectory of Device 1</name>
+      <description><![CDATA[
+Number of points: 2<br>
+Start time: 2023-03-01T12:05:30Z<br>
+End time: 2023-03-01T12:10:45Z<br>
+      ]]></description>
+      <styleUrl>#style_1</styleUrl>
+      <LineString>
+        <extrude>1</extrude>
+        <tessellate>1</tessellate>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>
+          -122.416700,37.773300,0
+          -122.415000,37.772500,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>Point 1 (Device 1)</name>
+      <description><![CDATA[
+ID: 1<br>
+Latitude: 37.773300<br>
+Longitude: -122.416700<br>
+Timestamp: 2023-03-01T12:05:30Z<br>
+Original Row: 3<br>
+Previous Row: 2<br>
+Previous Latitude: 37.774900<br>
+Previous Longitude: -122.419400<br>
+Previous Timestamp: 2023-03-01T12:00:00Z<br>
+Time Difference: 330.00 seconds<br>
+Distance: 0.296594 km<br>
+Speed: 3.24 km/h<br>
+      ]]></description>
+      <styleUrl>#style_1</styleUrl>
+      <Point>
+        <coordinates>
+          -122.416700,37.773300,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Point 2 (Device 1)</name>
+      <description><![CDATA[
+ID: 1<br>
+Latitude: 37.772500<br>
+Longitude: -122.415000<br>
+Timestamp: 2023-03-01T12:10:45Z<br>
+Original Row: 4<br>
+Previous Row: 3<br>
+Previous Latitude: 37.773300<br>
+Previous Longitude: -122.416700<br>
+Previous Timestamp: 2023-03-01T12:05:30Z<br>
+Time Difference: 315.00 seconds<br>
+Distance: 0.173894 km<br>
+Speed: 1.99 km/h<br>
+      ]]></description>
+      <styleUrl>#style_1</styleUrl>
+      <Point>
+        <coordinates>
+          -122.415000,37.772500,0
+        </coordinates>
+      </Point>
+    </Placemark>
+  </Folder>
+  <Style id="style_2">
+    <LineStyle>
+      <color>ff00ff00</color>
+      <width>4</width>
+    </LineStyle>
+    <IconStyle>
+      <color>ff00ff00</color>
+      <scale>0.5</scale>
+    </IconStyle>
+  </Style>
+  <Folder>
+    <name>Device 2</name>
+    <Placemark>
+      <name>Trajectory of Device 2</name>
+      <description><![CDATA[
+Number of points: 2<br>
+Start time: 2023-03-01T12:20:00Z<br>
+End time: 2023-03-01T12:40:00Z<br>
+      ]]></description>
+      <styleUrl>#style_2</styleUrl>
+      <LineString>
+        <extrude>1</extrude>
+        <tessellate>1</tessellate>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>
+          -74.010000,40.715600,0
+          -74.014000,40.718400,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>Point 1 (Device 2)</name>
+      <description><![CDATA[
+ID: 2<br>
+Latitude: 40.715600<br>
+Longitude: -74.010000<br>
+Timestamp: 2023-03-01T12:20:00Z<br>
+Original Row: 16<br>
+Previous Row: 15<br>
+Previous Latitude: 40.714900<br>
+Previous Longitude: -74.009000<br>
+Previous Timestamp: 2023-03-01T12:15:45Z<br>
+Time Difference: 255.00 seconds<br>
+Distance: 0.114725 km<br>
+Speed: 1.62 km/h<br>
+      ]]></description>
+      <styleUrl>#style_2</styleUrl>
+      <Point>
+        <coordinates>
+          -74.010000,40.715600,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Point 2 (Device 2)</name>
+      <description><![CDATA[
+ID: 2<br>
+Latitude: 40.718400<br>
+Longitude: -74.014000<br>
+Timestamp: 2023-03-01T12:40:00Z<br>
+Original Row: 20<br>
+Previous Row: 19<br>
+Previous Latitude: 40.717700<br>
+Previous Longitude: -74.013000<br>
+Previous Timestamp: 2023-03-01T12:35:45Z<br>
+Time Difference: 255.00 seconds<br>
+Distance: 0.114723 km<br>
+Speed: 1.62 km/h<br>
+      ]]></description>
+      <styleUrl>#style_2</styleUrl>
+      <Point>
+        <coordinates>
+          -74.014000,40.718400,0
+        </coordinates>
+      </Point>
+    </Placemark>
+  </Folder>
+</Document>
+</kml>

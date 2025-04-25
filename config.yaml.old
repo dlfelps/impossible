@@ -1,0 +1,12 @@
+# GPS Processor Configuration
+
+# CSV Column Mappings (specify the column names in your CSV file)
+columns:
+  id: "ID"               # Device/track identifier
+  latitude: "latitude"   # Latitude coordinate
+  longitude: "longitude" # Longitude coordinate  
+  timestamp: "timestamp" # Timestamp in RFC3339 format
+
+# Processing Parameters
+parameters:
+  filter_above_kph: 2.0  # Filter out records with speed below this value (km/h)
