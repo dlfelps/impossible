@@ -1,0 +1,39 @@
+modules = ["go"]
+
+[nix]
+channel = "stable-24_05"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "GPS Data Processor"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "gps-processor"
+
+[[workflows.workflow]]
+name = "GPS Data Processor"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "go run main.go large_sample.csv"
+
+[[workflows.workflow]]
+name = "gps-processor"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "go run main.go large_sample.csv && head -n 5 large_sample_processed.csv"
+
+[deployment]
+run = ["sh", "-c", "go run main.go large_sample.csv"]
