@@ -51,8 +51,7 @@ func displayHelp() {
 	fmt.Println("\nUsage:")
 	fmt.Println("  go run main.go [input_file] [filter_speed] [config_file]")
 	fmt.Println("  go run main.go [input_file] [config_file]")
-	fmt.Println("  go run main.go -h | --help\n")
-
+	fmt.Println("  go run main.go -h | --help")
 	fmt.Println("Arguments:")
 	fmt.Println("  input_file      Path to the input CSV file (default: sample.csv)")
 	fmt.Println("  filter_speed    Minimum speed threshold in km/h (default: 1.0)")
